@@ -1,0 +1,261 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ errand.title }} - Errand Details{% endblock %}
+{% block page_title %}Errand Details: {{ errand.title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Errand Information -->
+    <div class="col-md-6 mb-4">
+        <div class="table-card">
+            <div class="p-3 border-bottom">
+                <h6 class="mb-0">Errand Information</h6>
+            </div>
+            <div class="p-3">
+                <h5 class="mb-3">{{ errand.title }}</h5>
+                <p class="text-muted">{{ errand.description }}</p>
+                
+                <div class="row mt-4">
+                    <div class="col-6">
+                        <small class="text-muted">Budget</small>
+                        <div class="fw-bold h5 text-primary">GHS {{ "%.2f"|format(errand.budget) }}</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Status</small>
+                        <div>
+                            <span class="badge-status 
+                                {% if errand.status == 'open' %}bg-success
+                                {% elif errand.status == 'in_progress' %}bg-warning
+                                {% elif errand.status == 'completed' %}bg-secondary
+                                {% else %}bg-danger{% endif %}">
+                                {{ errand.status|replace('_', ' ')|title }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-6 mt-3">
+                        <small class="text-muted">Location</small>
+                        <div class="fw-bold">{{ errand.location }}</div>
+                    </div>
+                    <div class="col-6 mt-3">
+                        <small class="text-muted">Category</small>
+                        <div class="fw-bold">{{ errand.category|title if errand.category else 'General' }}</div>
+                    </div>
+                    <div class="col-6 mt-3">
+                        <small class="text-muted">Deadline</small>
+                        <div class="fw-bold">{{ errand.deadline.strftime('%b %d, %Y %I:%M %p') }}</div>
+                    </div>
+                    <div class="col-6 mt-3">
+                        <small class="text-muted">Created</small>
+                        <div class="fw-bold">{{ errand.created_at.strftime('%b %d, %Y %I:%M %p') }}</div>
+                    </div>
+                </div>
+                
+                {% if errand.accepted_at %}
+                <div class="mt-3 p-3 bg-light rounded">
+                    <small class="text-muted">Accepted On</small>
+                    <div class="fw-bold">{{ errand.accepted_at.strftime('%b %d, %Y %I:%M %p') }}</div>
+                </div>
+                {% endif %}
+                
+                {% if errand.completed_at %}
+                <div class="mt-3 p-3 bg-light rounded">
+                    <small class="text-muted">Completed On</small>
+                    <div class="fw-bold">{{ errand.completed_at.strftime('%b %d, %Y %I:%M %p') }}</div>
+                </div>
+                {% endif %}
+                
+                <div class="mt-4">
+                    <div class="btn-group w-100">
+                        <a href="{{ url_for('admin_errands') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </a>
+                        <button onclick="confirmDelete({{ errand.id }}, '{{ errand.title }}')" 
+                                class="btn btn-outline-danger">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- User Information -->
+    <div class="col-md-6 mb-4">
+        <div class="table-card">
+            <div class="p-3 border-bottom">
+                <h6 class="mb-0">User Information</h6>
+            </div>
+            <div class="p-3">
+                <!-- Poster Information -->
+                <div class="mb-4">
+                    <h6>Posted By</h6>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" 
+                             style="width: 50px; height: 50px; color: white; font-weight: bold;">
+                            {{ errand.poster_user.name[0]|upper }}
+                        </div>
+                        <div>
+                            <div class="fw-bold">By: {{ errand.poster.name }}</div>
+                            <small class="text-muted">{{ errand.poster.email }}</small>
+                            <div>
+                                <span class="badge-status bg-primary">
+                                    {{ errand.poster_user.role|title }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('admin_user_detail', user_id=errand.poster_user.id) }}" 
+                       class="btn btn-sm btn-outline-primary w-100">
+                        View Poster Profile
+                    </a>
+                </div>
+                
+                <!-- Runner Information -->
+                {% if errand.runner_user %}
+                <div>
+                    <h6>Accepted By</h6>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-3" 
+                             style="width: 50px; height: 50px; color: white; font-weight: bold;">
+                            {{ errand.runner_user.name[0]|upper }}
+                        </div>
+                        <div>
+                            <div class="fw-bold">{{ errand.runner_user.name }}</div>
+                            <small class="text-muted">{{ errand.runner_user.email }}</small>
+                            <div>
+                                <span class="badge-status bg-success">
+                                    {{ errand.runner_user.role|title }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('admin_user_detail', user_id=errand.runner_user.id) }}" 
+                       class="btn btn-sm btn-outline-success w-100">
+                        View Runner Profile
+                    </a>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-running fa-2x text-muted mb-3"></i>
+                    <p class="text-muted">No runner assigned yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Information -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="table-card">
+            <div class="p-3 border-bottom">
+                <h6 class="mb-0">Payment Information</h6>
+            </div>
+            <div class="p-3">
+                {% if payments %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Method</th>
+                                <th>Payer</th>
+                                <th>Payee</th>
+                                <th>Created</th>
+                                <th>Completed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in payments %}
+                            <tr>
+                                <td class="fw-bold">GHS {{ "%.2f"|format(payment.amount) }}</td>
+                                <td>
+                                    <span class="badge-status 
+                                        {% if payment.status == 'completed' %}bg-success
+                                        {% elif payment.status == 'pending' %}bg-warning
+                                        {% else %}bg-danger{% endif %}">
+                                        {{ payment.status }}
+                                    </span>
+                                </td>
+                                <td>{{ payment.payment_method|replace('_', ' ')|title if payment.payment_method else 'N/A' }}</td>
+                                <td>{{ payment.payer.name }}</td>
+                                <td>{{ payment.payee.name }}</td>
+                                <td>{{ payment.created_at.strftime('%b %d, %Y %I:%M %p') }}</td>
+                                <td>
+                                    {% if payment.completed_at %}
+                                    {{ payment.completed_at.strftime('%b %d, %Y %I:%M %p') }}
+                                    {% else %}
+                                    <span class="text-muted">Not completed</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-money-bill-wave fa-2x text-muted mb-3"></i>
+                    <p class="text-muted">No payment records found</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Messages -->
+<div class="row">
+    <div class="col-12">
+        <div class="table-card">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Messages ({{ messages|length }})</h6>
+            </div>
+            <div class="p-3">
+                {% if messages %}
+                <div class="message-thread" style="max-height: 400px; overflow-y: auto;">
+                    {% for message in messages %}
+                    <div class="message mb-3 p-3 rounded {% if message.sender_id == errand.poster_id %}bg-light{% else %}bg-primary text-white{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="fw-bold">
+                                {{ message.sender.name }}
+                                <small class="{% if message.sender_id == errand.poster_id %}text-muted{% else %}text-light{% endif %}">
+                                    ({{ message.sender.role }})
+                                </small>
+                            </div>
+                            <small class="{% if message.sender_id == errand.poster_id %}text-muted{% else %}text-light{% endif %}">
+                                {{ message.created_at.strftime('%b %d, %Y %I:%M %p') }}
+                            </small>
+                        </div>
+                        <p class="mb-0">{{ message.content }}</p>
+                        {% if message.is_read %}
+                        <small class="{% if message.sender_id == errand.poster_id %}text-muted{% else %}text-light{% endif %}">
+                            <i class="fas fa-check"></i> Read
+                        </small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-comments fa-2x text-muted mb-3"></i>
+                    <p class="text-muted">No messages yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete(errandId, errandTitle) {
+    if (confirm(`Are you sure you want to delete errand "${errandTitle}"? This will also delete all associated messages and payments. This action cannot be undone!`)) {
+        window.location.href = `/admin/delete_errand/${errandId}`;
+    }
+}
+</script>
+{% endblock %}

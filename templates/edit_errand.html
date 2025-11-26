@@ -1,0 +1,431 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Errand - Boy-Boy</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --secondary-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --bg-color: #f9fafb;
+            --text-dark: #111827;
+            --text-light: #6b7280;
+            --border-color: #d1d5db;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        .navbar {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-light);
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--primary-color);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--text-dark);
+            font-weight: 800;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+            font-size: 1rem;
+            outline: none;
+            transition: border-color .2s ease, box-shadow .2s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 2rem;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .2s ease, transform .1s ease;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background: #4338ca;
+            transform: translateY(-1px);
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--text-light);
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: space-between;
+            margin-top: 2rem;
+        }
+
+        .flash-messages {
+            margin-bottom: 2rem;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .required::after {
+            content: " *";
+            color: var(--danger-color);
+        }
+
+        .help-text {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-top: 0.25rem;
+        }
+
+        .errand-status {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .status-open {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .navbar {
+                padding: 1rem;
+            }
+            
+            .nav-links {
+                gap: 1rem;
+            }
+            
+            .card {
+                padding: 1.5rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <a href="{{ url_for('dashboard') }}" class="logo">Boy.Boy</a>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('create_errand') }}">Create Errand</a>
+            <a href="{{ url_for('profile') }}">Profile</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+            <div class="user-info">
+                <div class="user-avatar">{{ session.user_name[0] | upper }}</div>
+                <span>Hi, {{ session.user_name }}!</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Flash Messages -->
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <!-- Edit Errand Form -->
+        <div class="card">
+            <h1>Edit Errand ✏️</h1>
+            
+            <!-- Status Badge -->
+            <div class="errand-status status-{{ errand.status }}">
+                Status: {{ errand.status | replace('_', ' ') | title }}
+            </div>
+            
+            <form action="{{ url_for('edit_errand', errand_id=errand.id) }}" method="POST">
+                <!-- Errand Title -->
+                <div class="form-group">
+                    <label for="title" class="required">Errand Title</label>
+                    <input type="text" id="title" name="title" value="{{ errand.title }}" placeholder="e.g., Grocery Shopping, Package Delivery" required>
+                    <div class="help-text">Be specific about what you need done</div>
+                </div>
+
+                <!-- Category and Budget -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="category" class="required">Category</label>
+                        <select id="category" name="category" required>
+                            <option value="shopping" {% if errand.category == 'shopping' %}selected{% endif %}>🛒 Shopping</option>
+                            <option value="delivery" {% if errand.category == 'delivery' %}selected{% endif %}>📦 Delivery</option>
+                            <option value="food" {% if errand.category == 'food' %}selected{% endif %}>🍔 Food Pickup</option>
+                            <option value="cleaning" {% if errand.category == 'cleaning' %}selected{% endif %}>🧹 Cleaning</option>
+                            <option value="repair" {% if errand.category == 'repair' %}selected{% endif %}>🔧 Repair</option>
+                            <option value="pet_care" {% if errand.category == 'pet_care' %}selected{% endif %}>🐾 Pet Care</option>
+                            <option value="other" {% if errand.category == 'other' %}selected{% endif %}>📋 Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="budget" class="required">Budget ($)</label>
+                        <input type="number" id="budget" name="budget" value="{{ "%.2f"|format(errand.budget) }}" min="5" max="1000" step="0.01" placeholder="25.00" required>
+                        <div class="help-text">Minimum $5.00</div>
+                    </div>
+                </div>
+
+                <!-- Location -->
+                <div class="form-group">
+                    <label for="location" class="required">Location</label>
+                    <input type="text" id="location" name="location" value="{{ errand.location }}" placeholder="e.g., 123 Main St, City, State" required>
+                    <div class="help-text">Where does this errand need to be done?</div>
+                </div>
+
+                <!-- Deadline -->
+                <div class="form-group">
+                    <label for="deadline" class="required">Deadline</label>
+                    <input type="datetime-local" id="deadline" name="deadline" value="{{ errand.deadline.strftime('%Y-%m-%dT%H:%M') }}" required>
+                    <div class="help-text">When do you need this completed by?</div>
+                </div>
+
+                <!-- Description -->
+                <div class="form-group">
+                    <label for="description" class="required">Detailed Description</label>
+                    <textarea id="description" name="description" placeholder="Please provide detailed instructions for the runner..." required>{{ errand.description }}</textarea>
+                    <div class="help-text">The more details, the better! Runners will use this information to complete your errand.</div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="action-buttons">
+                    <div>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                    <div style="display: flex; gap: 1rem;">
+                        <a href="{{ url_for('delete_errand', errand_id=errand.id) }}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this errand? This action cannot be undone.')">Delete</a>
+                        <button type="submit" class="btn btn-warning">Update Errand</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Errand Info -->
+        <div class="card">
+            <h3 style="margin-bottom: 1rem;">📊 Errand Information</h3>
+            <div style="display: grid; gap: 0.5rem; font-size: 0.9rem; color: var(--text-light);">
+                <div>• <strong>Created:</strong> {{ errand.created_at.strftime('%B %d, %Y at %I:%M %p') }}</div>
+                <div>• <strong>Status:</strong> {{ errand.status | replace('_', ' ') | title }}</div>
+                <div>• <strong>Errand ID:</strong> #{{ errand.id }}</div>
+                {% if errand.runner_id %}
+                <div>• <strong>Assigned to Runner:</strong> Yes</div>
+                {% else %}
+                <div>• <strong>Assigned to Runner:</strong> Not yet assigned</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set minimum datetime to current time
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById('deadline').min = now.toISOString().slice(0, 16);
+
+        // Form validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const budget = parseFloat(document.getElementById('budget').value);
+            if (budget < 5) {
+                e.preventDefault();
+                alert('Minimum budget is $5.00');
+                return false;
+            }
+        });
+
+        // Confirm before delete
+        document.querySelector('.btn-danger').addEventListener('click', function(e) {
+            if (!confirm('Are you sure you want to delete this errand? This action cannot be undone.')) {
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>

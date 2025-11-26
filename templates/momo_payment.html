@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Mobile Money Payment - Boy.Boy{% endblock %}
+
+{% block content %}
+<style>
+    .payment-form {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    
+    .network-options {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .network-option {
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .network-option:hover {
+        border-color: var(--primary-color);
+        background: var(--bg-color);
+    }
+    
+    .network-option.selected {
+        border-color: var(--primary-color);
+        background: var(--primary-color);
+        color: white;
+    }
+    
+    .network-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+</style>
+
+<div class="container" style="max-width: 800px; margin: 0 auto; padding: 0 2rem;">
+    <div class="card">
+        <h1 style="text-align: center; margin-bottom: 2rem;">Mobile Money Payment</h1>
+        
+        <!-- Errand Info -->
+        <div style="background: var(--bg-color); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+            <h3 style="margin-bottom: 0.5rem;">{{ errand.title }}</h3>
+            <div style="display: flex; justify-content: space-between;">
+                <div>
+                    <strong>Amount:</strong> 
+                    <span style="color: var(--secondary-color); font-size: 1.25rem; font-weight: 700;">
+                        GHS {{ "%.2f" | format(errand.budget) }}
+                    </span>
+                </div>
+                <div>
+                    <strong>Runner:</strong> {{ errand.runner_user.name }}
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" class="payment-form">
+            <!-- Network Selection -->
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 1rem; font-weight: 600;">Select Network</label>
+                <div class="network-options">
+                    <div class="network-option" data-network="MTN">
+                        <div class="network-icon">📱</div>
+                        <div>MTN Mobile Money</div>
+                    </div>
+                    <div class="network-option" data-network="VOD">
+                        <div class="network-icon">📞</div>
+                        <div>Vodafone Cash</div>
+                    </div>
+                    <div class="network-option" data-network="AIR">
+                        <div class="network-icon">📶</div>
+                        <div>AirtelTigo Money</div>
+                    </div>
+                </div>
+                <input type="hidden" name="network" id="networkInput" required>
+            </div>
+
+            <!-- Phone Number -->
+            <div class="form-group">
+                <label for="phone">Mobile Money Number</label>
+                <input type="tel" id="phone" name="phone" placeholder="e.g., 0551234567" required>
+                <div class="help-text">Enter your mobile money registered number</div>
+            </div>
+
+            <!-- Payment Button -->
+            <div style="text-align: center; margin-top: 2rem;">
+                <button type="submit" class="btn btn-success" style="padding: 1rem 2rem; font-size: 1.1rem;">
+                    Pay GHS {{ "%.2f" | format(errand.budget) }} with Mobile Money
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Network selection
+    document.querySelectorAll('.network-option').forEach(option => {
+        option.addEventListener('click', function() {
+            // Remove selected class from all options
+            document.querySelectorAll('.network-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked option
+            this.classList.add('selected');
+            
+            // Update hidden input
+            document.getElementById('networkInput').value = this.dataset.network;
+        });
+    });
+
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const network = document.getElementById('networkInput').value;
+        const phone = document.getElementById('phone').value;
+        
+        if (!network) {
+            e.preventDefault();
+            alert('Please select a mobile network');
+            return false;
+        }
+        
+        if (!phone) {
+            e.preventDefault();
+            alert('Please enter your phone number');
+            return false;
+        }
+    });
+</script>
+{% endblock %}

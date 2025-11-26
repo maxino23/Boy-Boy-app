@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <!-- Favicon & PWA Meta Tags -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='favicon/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon/favicon-16x16.png') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon/favicon.ico') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='favicon/site.webmanifest') }}">
+    <meta name="msapplication-TileColor" content="#4f46e5">
+    <meta name="theme-color" content="#4f46e5">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Boy-Boy</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* Same styles as register page */
+        :root {
+            --primary-color: #4f46e5;
+            --secondary-color: #10b981;
+            --bg-color: #f9fafb;
+            --text-dark: #111827;
+            --text-light: #6b7280;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+        }
+
+        .card {
+            background: white;
+            width: 100%;
+            max-width: 28rem;
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: var(--text-dark);
+            font-weight: 800;
+        }
+
+        label {
+            display: block;
+            font-size: 0.9rem;
+            margin-bottom: 0.3rem;
+            color: var(--text-light);
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db;
+            margin-bottom: 1.2rem;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color .2s ease;
+        }
+
+        input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .2s ease;
+        }
+
+        .btn:hover {
+            background: #059669;
+        }
+
+        .meta {
+            margin-top: 1rem;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .meta a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .meta a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Welcome Back! 👋</h2>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div style="padding: 12px; margin-bottom: 20px; border-radius: 8px; 
+                           background: {% if category == 'success' %}#10b981{% else %}#ef4444{% endif %}; 
+                           color: white; text-align: center; font-size: 0.9rem;">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form action="/login" method="POST">
+        <label>Email</label>
+        <input type="email" name="email" placeholder="Enter your email" required>
+
+        <label>Password</label>
+        <input type="password" name="password" placeholder="Enter your password" required>
+
+        <button class="btn">Login</button>
+    </form>
+
+    <div class="meta">
+        Don't have an account?  
+        <a href="/register">Register here</a>
+    </div>
+</div>
+
+</body>
+</html>

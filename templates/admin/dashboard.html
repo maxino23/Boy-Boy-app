@@ -1,0 +1,204 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Admin Dashboard - Boy-Boy{% endblock %}
+{% block page_title %}Dashboard Overview{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Statistics Cards -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_users }}</div>
+            <div class="stat-label">Total Users</div>
+            <div class="mt-2">
+                <small class="text-muted">
+                    {% for role, count in user_roles %}
+                        {{ role }}: {{ count }}{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_errands }}</div>
+            <div class="stat-label">Total Errands</div>
+            <div class="mt-2">
+                <small class="text-muted">
+                    {% for status, count in errand_statuses %}
+                        {{ status }}: {{ count }}{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_payments }}</div>
+            <div class="stat-label">Total Payments</div>
+            <div class="mt-2">
+                <small class="text-muted">
+                    {% for status, count in payment_statuses %}
+                        {{ status }}: {{ count }}{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="stat-card">
+            <div class="stat-number">GHS {{ "%.2f"|format(total_revenue) }}</div>
+            <div class="stat-label">Total Revenue</div>
+            <div class="mt-2">
+                <small class="text-success">
+                    <i class="fas fa-arrow-up"></i>
+                    All completed payments
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Users -->
+    <div class="col-lg-4 mb-4">
+        <div class="table-card">
+            <div class="p-3 border-bottom">
+                <h6 class="mb-0">Recent Users</h6>
+            </div>
+            <div class="p-3">
+                {% for user in recent_users %}
+                <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">{{ user.name }}</div>
+                        <small class="text-muted">{{ user.email }}</small>
+                        <div>
+                            <span class="badge-status {% if user.role == 'user' %}bg-primary{% else %}bg-success{% endif %}">
+                                {{ user.role }}
+                            </span>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('admin_user_detail', user_id=user.id) }}" class="btn btn-sm btn-outline-primary">
+                        View
+                    </a>
+                </div>
+                {% endfor %}
+                <a href="{{ url_for('admin_users') }}" class="btn btn-outline-secondary w-100">
+                    View All Users
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Errands -->
+    <div class="col-lg-4 mb-4">
+        <div class="table-card">
+            <div class="p-3 border-bottom">
+                <h6 class="mb-0">Recent Errands</h6>
+            </div>
+            <div class="p-3">
+                {% for errand in recent_errands %}
+                <div class="mb-3 pb-3 border-bottom">
+                    <div class="fw-bold">{{ errand.title }}</div>
+                    <small class="text-muted">GHS {{ "%.2f"|format(errand.budget) }} • {{ errand.location }}</small>
+                    <div class="mt-1">
+                        <span class="badge-status 
+                            {% if errand.status == 'open' %}bg-success
+                            {% elif errand.status == 'in_progress' %}bg-warning
+                            {% elif errand.status == 'completed' %}bg-secondary
+                            {% else %}bg-danger{% endif %}">
+                            {{ errand.status }}
+                        </span>
+                    </div>
+                    <small class="text-muted d-block mt-1">
+                        By: {{ errand.poster.name }}
+                    </small>
+                    <a href="{{ url_for('admin_errand_detail', errand_id=errand.id) }}" class="btn btn-sm btn-outline-primary mt-2">
+                        View Details
+                    </a>
+                </div>
+                {% endfor %}
+                <a href="{{ url_for('admin_errands') }}" class="btn btn-outline-secondary w-100">
+                    View All Errands
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Payments -->
+    <div class="col-lg-4 mb-4">
+        <div class="table-card">
+            <div class="p-3 border-bottom">
+                <h6 class="mb-0">Recent Payments</h6>
+            </div>
+            <div class="p-3">
+                {% for payment in recent_payments %}
+                <div class="mb-3 pb-3 border-bottom">
+                    <div class="fw-bold">GHS {{ "%.2f"|format(payment.amount) }}</div>
+                    <small class="text-muted">
+                        {{ payment.payment_method|replace('_', ' ')|title }}
+                    </small>
+                    <div class="mt-1">
+                        <span class="badge-status 
+                            {% if payment.status == 'completed' %}bg-success
+                            {% elif payment.status == 'pending' %}bg-warning
+                            {% else %}bg-danger{% endif %}">
+                            {{ payment.status }}
+                        </span>
+                    </div>
+                    <small class="text-muted d-block mt-1">
+                        From: {{ payment.payer.name }}<br>
+                        To: {{ payment.payee.name }}
+                    </small>
+                </div>
+                {% endfor %}
+                <a href="{{ url_for('admin_payments') }}" class="btn btn-outline-secondary w-100">
+                    View All Payments
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="table-card">
+            <div class="p-3 border-bottom">
+                <h6 class="mb-0">Quick Actions</h6>
+            </div>
+            <div class="p-3">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('admin_users') }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-users me-2"></i>
+                            Manage Users
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('admin_errands') }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-tasks me-2"></i>
+                            Manage Errands
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('admin_payments') }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-money-bill-wave me-2"></i>
+                            Manage Payments
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-eye me-2"></i>
+                            View User App
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

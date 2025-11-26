@@ -1,0 +1,164 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Manage Users - Boy-Boy Admin{% endblock %}
+{% block page_title %}User Management{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="table-card">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">All Users ({{ users|length }})</h6>
+                <div class="d-flex gap-2">
+                    <!-- Search Form -->
+                    <form method="GET" class="d-flex gap-2">
+                        <select name="role" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="">All Roles</option>
+                            <option value="user" {% if request.args.get('role') == 'user' %}selected{% endif %}>Users</option>
+                            <option value="runner" {% if request.args.get('role') == 'runner' %}selected{% endif %}>Runners</option>
+                        </select>
+                        <input type="text" name="search" class="form-control form-control-sm" placeholder="Search users..." 
+                               value="{{ request.args.get('search', '') }}">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        <a href="{{ url_for('admin_users') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-refresh"></i>
+                        </a>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Joined</th>
+                            <th>Errands</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle overflow-hidden" 
+                                         style="width: 40px; height: 40px; background: linear-gradient(135deg, #4f46e5, #10b981); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                                        {% if user.profile_picture and user.profile_picture != 'default_avatar.png' %}
+                                            <img src="{{ url_for('static', filename='profile_pics/' + user.profile_picture) }}" 
+                                                 alt="{{ user.name }}"
+                                                 style="width: 100%; height: 100%; object-fit: cover;"
+                                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                            <div style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; background: linear-gradient(135deg, #4f46e5, #10b981); color: white; font-weight: bold;">
+                                                {{ user.name[0]|upper }}
+                                            </div>
+                                        {% else %}
+                                            {{ user.name[0]|upper }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="ms-3">
+                                        <div class="fw-bold">{{ user.name }}</div>
+                                        <small class="text-muted">ID: {{ user.id }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge-status {% if user.role == 'user' %}bg-primary{% else %}bg-success{% endif %}">
+                                    {{ user.role|title }}
+                                </span>
+                                {% if user.is_admin %}
+                                <span class="badge-status bg-warning mt-1">Admin</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.phone or 'N/A' }}</td>
+                            <td>
+                                <small class="text-muted">
+                                    {{ user.created_at.strftime('%b %d, %Y') }}
+                                </small>
+                            </td>
+                            <td>
+                                {% set user_errands_count = user.errands_posted|length %}
+                                {% set runner_errands_count = user.errands_accepted|length %}
+                                <small>
+                                    Posted: {{ user_errands_count }}<br>
+                                    Accepted: {{ runner_errands_count }}
+                                </small>
+                            </td>
+                            <td>
+                                <span class="badge-status bg-success">
+                                    Active
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('admin_user_detail', user_id=user.id) }}" 
+                                       class="btn btn-outline-primary" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-danger" 
+                                            onclick="confirmDelete({{ user.id }}, '{{ user.name }}')" 
+                                            title="Delete User"
+                                            {% if user.id == session.user_id %}disabled{% endif %}>
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-users fa-2x mb-3"></i>
+                                    <p>No users found</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Summary -->
+            <div class="p-3 border-top">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <small class="text-muted">Total Users</small>
+                        <div class="fw-bold">{{ users|length }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">Regular Users</small>
+                        <div class="fw-bold">{{ users|selectattr('role', 'equalto', 'user')|list|length }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">Runners</small>
+                        <div class="fw-bold">{{ users|selectattr('role', 'equalto', 'runner')|list|length }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">Active Today</small>
+                        <div class="fw-bold">
+                          {{ users|length }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete(userId, userName) {
+    if (confirm(`Are you sure you want to delete user "${userName}"? This will also delete all their errands, messages, and payments. This action cannot be undone!`)) {
+        window.location.href = `/admin/delete_user/${userId}`;
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,270 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Manage Payments - Boy-Boy Admin{% endblock %}
+{% block page_title %}Payment Management{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="table-card">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">All Payments ({{ payments|length }})</h6>
+                <div class="d-flex gap-2">
+                    <!-- Filter Form -->
+                    <form method="GET" class="d-flex gap-2">
+                        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="">All Status</option>
+                            <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>Completed</option>
+                            <option value="cancelled" {% if request.args.get('status') == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                        </select>
+                        <select name="payment_method" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="">All Methods</option>
+                            <option value="mobile_money" {% if request.args.get('payment_method') == 'mobile_money' %}selected{% endif %}>Mobile Money</option>
+                            <option value="cash" {% if request.args.get('payment_method') == 'cash' %}selected{% endif %}>Cash</option>
+                            <option value="bank_transfer" {% if request.args.get('payment_method') == 'bank_transfer' %}selected{% endif %}>Bank Transfer</option>
+                        </select>
+                        <a href="{{ url_for('admin_payments') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-refresh"></i>
+                        </a>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Amount</th>
+                            <th>Payer → Payee</th>
+                            <th>Errand</th>
+                            <th>Method</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Completed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                        <tr>
+                            <td>
+                                <div class="fw-bold h5 {% if payment.status == 'completed' %}text-success{% else %}text-warning{% endif %}">
+                                    GHS {{ "%.2f"|format(payment.amount) }}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ payment.payer.name }}</div>
+                                <small class="text-muted">{{ payment.payer.email }}</small>
+                                <div class="my-1">
+                                    <i class="fas fa-arrow-down text-muted"></i>
+                                </div>
+                                <div class="fw-bold">{{ payment.payee.name }}</div>
+                                <small class="text-muted">{{ payment.payee.email }}</small>
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ payment.errand.title }}</div>
+                                <small class="text-muted">{{ payment.errand.description[:50] }}...</small>
+                                <div class="mt-1">
+                                    <span class="badge bg-light text-dark">
+                                        {{ payment.errand.status }}
+                                    </span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ payment.payment_method|replace('_', ' ')|title if payment.payment_method else 'N/A' }}</div>
+                                {% if payment.payer_phone %}
+                                <small class="text-muted">Payer: {{ payment.payer_phone }}</small>
+                                {% endif %}
+                                {% if payment.payee_phone %}
+                                <br>
+                                <small class="text-muted">Payee: {{ payment.payee_phone }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge-status 
+                                    {% if payment.status == 'completed' %}bg-success
+                                    {% elif payment.status == 'pending' %}bg-warning
+                                    {% else %}bg-danger{% endif %}">
+                                    {{ payment.status|title }}
+                                </span>
+                                {% if payment.payment_proof %}
+                                <br>
+                                <small>
+                                    <a href="{{ url_for('static', filename='payment_proofs/' + payment.payment_proof) }}" 
+                                       target="_blank" class="text-primary">
+                                        View Proof
+                                    </a>
+                                </small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted">
+                                    {{ payment.created_at.strftime('%b %d, %Y') }}<br>
+                                    {{ payment.created_at.strftime('%I:%M %p') }}
+                                </small>
+                            </td>
+                            <td>
+                                {% if payment.completed_at %}
+                                <small class="text-muted">
+                                    {{ payment.completed_at.strftime('%b %d, %Y') }}<br>
+                                    {{ payment.completed_at.strftime('%I:%M %p') }}
+                                </small>
+                                {% else %}
+                                <span class="text-muted">Not completed</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-money-bill-wave fa-2x mb-3"></i>
+                                    <p>No payments found</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Summary -->
+            <div class="p-3 border-top">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <small class="text-muted">Total Amount</small>
+                        <div class="fw-bold">
+                            GHS {{ "%.2f"|format(payments|sum(attribute='amount')) }}
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-muted">Completed</small>
+                        <div class="fw-bold">{{ payments|selectattr('status', 'equalto', 'completed')|list|length }}</div>
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-muted">Pending</small>
+                        <div class="fw-bold">{{ payments|selectattr('status', 'equalto', 'pending')|list|length }}</div>
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-muted">Cancelled</small>
+                        <div class="fw-bold">{{ payments|selectattr('status', 'equalto', 'cancelled')|list|length }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">Completed Amount</small>
+                        <div class="fw-bold text-success">
+                            GHS {{ "%.2f"|format(payments|selectattr('status', 'equalto', 'completed')|sum(attribute='amount')) }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Statistics -->
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="table-card">
+            <div class="p-3 border-bottom">
+                <h6 class="mb-0">Payment Methods</h6>
+            </div>
+            <div class="p-3">
+                {% set mobile_money = payments|selectattr('payment_method', 'equalto', 'mobile_money')|list %}
+                {% set cash = payments|selectattr('payment_method', 'equalto', 'cash')|list %}
+                {% set bank_transfer = payments|selectattr('payment_method', 'equalto', 'bank_transfer')|list %}
+                {% set other = payments|rejectattr('payment_method', 'equalto', 'mobile_money')|rejectattr('payment_method', 'equalto', 'cash')|rejectattr('payment_method', 'equalto', 'bank_transfer')|list %}
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Mobile Money</span>
+                        <span>{{ mobile_money|length }} ({{ ((mobile_money|length / payments|length) * 100)|round(1) if payments else 0 }}%)</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-primary" style="width: {{ (mobile_money|length / payments|length) * 100 if payments else 0 }}%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Cash</span>
+                        <span>{{ cash|length }} ({{ ((cash|length / payments|length) * 100)|round(1) if payments else 0 }}%)</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: {{ (cash|length / payments|length) * 100 if payments else 0 }}%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Bank Transfer</span>
+                        <span>{{ bank_transfer|length }} ({{ ((bank_transfer|length / payments|length) * 100)|round(1) if payments else 0 }}%)</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-info" style="width: {{ (bank_transfer|length / payments|length) * 100 if payments else 0 }}%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Other</span>
+                        <span>{{ other|length }} ({{ ((other|length / payments|length) * 100)|round(1) if payments else 0 }}%)</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-warning" style="width: {{ (other|length / payments|length) * 100 if payments else 0 }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="table-card">
+            <div class="p-3 border-bottom">
+                <h6 class="mb-0">Payment Status</h6>
+            </div>
+            <div class="p-3">
+                {% set completed = payments|selectattr('status', 'equalto', 'completed')|list %}
+                {% set pending = payments|selectattr('status', 'equalto', 'pending')|list %}
+                {% set cancelled = payments|selectattr('status', 'equalto', 'cancelled')|list %}
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Completed</span>
+                        <span>{{ completed|length }} ({{ ((completed|length / payments|length) * 100)|round(1) if payments else 0 }}%)</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: {{ (completed|length / payments|length) * 100 if payments else 0 }}%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Pending</span>
+                        <span>{{ pending|length }} ({{ ((pending|length / payments|length) * 100)|round(1) if payments else 0 }}%)</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-warning" style="width: {{ (pending|length / payments|length) * 100 if payments else 0 }}%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Cancelled</span>
+                        <span>{{ cancelled|length }} ({{ ((cancelled|length / payments|length) * 100)|round(1) if payments else 0 }}%)</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-danger" style="width: {{ (cancelled|length / payments|length) * 100 if payments else 0 }}%"></div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 text-center">
+                    <div class="fw-bold h4 text-success">
+                        GHS {{ "%.2f"|format(completed|sum(attribute='amount')) }}
+                    </div>
+                    <small class="text-muted">Total Completed Amount</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

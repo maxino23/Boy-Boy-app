@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+
+{% block title %}Create Errand - Boy-Boy{% endblock %}
+
+{% block nav_links %}
+    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+    <a href="{{ url_for('create_errand') }}" class="active">Create Errand</a>
+    <a href="{{ url_for('profile') }}">Profile</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
+{% endblock %}
+
+{% block content %}
+<style>
+    /* FORM STYLING USING YOUR THEME VARIABLES */
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    label {
+        display: block;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+        color: var(--text-light);
+        font-weight: 600;
+    }
+
+    /* INPUT STYLING - USING YOUR THEME VARIABLES */
+    input[type="text"],
+    input[type="number"],
+    input[type="datetime-local"],
+    textarea,
+    select {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 1rem;
+        background: var(--card-bg);
+        color: var(--text-dark);
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+        font-family: inherit;
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    input[type="datetime-local"]:focus,
+    textarea:focus,
+    select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 20%, transparent);
+        background: var(--card-bg);
+    }
+
+    input[type="text"]:hover,
+    input[type="number"]:hover,
+    input[type="datetime-local"]:hover,
+    textarea:hover,
+    select:hover {
+        border-color: color-mix(in srgb, var(--border-color) 70%, var(--primary-color) 30%);
+    }
+
+    /* Textarea specific styling */
+    textarea {
+        resize: vertical;
+        min-height: 120px;
+        line-height: 1.5;
+    }
+
+    /* Select dropdown styling */
+    select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 16px center;
+        background-size: 16px;
+        padding-right: 40px;
+        cursor: pointer;
+    }
+
+    [data-theme="dark"] select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    }
+
+    /* Button styling - matching your theme */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 2rem;
+        color: white;
+        border: none;
+        border-radius: 50px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        min-width: 140px;
+    }
+
+    .btn-success {
+        background: var(--secondary-color);
+    }
+
+    .btn-success:hover {
+        background: color-mix(in srgb, var(--secondary-color) 90%, black);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px color-mix(in srgb, var(--secondary-color) 30%, transparent);
+    }
+
+    .btn-secondary {
+        background: var(--text-light);
+    }
+
+    .btn-secondary:hover {
+        background: color-mix(in srgb, var(--text-light) 90%, black);
+        transform: translateY(-1px);
+    }
+
+    /* Form layout */
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .required::after {
+        content: " *";
+        color: var(--danger-color);
+    }
+
+    .help-text {
+        font-size: 0.8rem;
+        color: var(--text-light);
+        margin-top: 0.5rem;
+        line-height: 1.4;
+    }
+
+    /* Card styling - matching your theme */
+    .form-card {
+        background: var(--card-bg);
+        padding: 2rem;
+        border-radius: 1rem;
+        box-shadow: var(--shadow);
+        margin-bottom: 2rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .tips-card {
+        background: var(--card-bg);
+        padding: 1.5rem;
+        border-radius: 1rem;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border-color);
+    }
+
+    /* Page header */
+    .page-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        color: var(--text-dark);
+        font-weight: 800;
+    }
+
+    .page-header h1 {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Tips section styling */
+    .tips-grid {
+        display: grid;
+        gap: 0.75rem;
+        font-size: 0.9rem;
+        color: var(--text-light);
+    }
+
+    .tip-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .tip-item strong {
+        color: var(--text-dark);
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+        
+        .btn {
+            width: 100%;
+            min-width: auto;
+        }
+        
+        .container {
+            padding: 0 1rem;
+        }
+        
+        .form-card {
+            padding: 1.5rem;
+        }
+        
+        .page-header h1 {
+            font-size: 1.5rem;
+        }
+    }
+
+    /* Focus states for accessibility */
+    input:focus-visible,
+    textarea:focus-visible,
+    select:focus-visible {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+
+    /* Placeholder styling */
+    ::placeholder {
+        color: var(--text-light);
+        opacity: 0.7;
+    }
+
+    /* Invalid input styling */
+    input:invalid,
+    textarea:invalid,
+    select:invalid {
+        border-color: var(--danger-color);
+    }
+
+    input:invalid:focus,
+    textarea:invalid:focus,
+    select:invalid:focus {
+        border-color: var(--danger-color);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger-color) 20%, transparent);
+    }
+
+    /* Disabled state */
+    input:disabled,
+    textarea:disabled,
+    select:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        background: color-mix(in srgb, var(--card-bg) 90%, var(--border-color));
+    }
+</style>
+
+<div class="container" style="max-width: 800px; margin: 0 auto;">
+    <!-- Create Errand Form -->
+    <div class="form-card">
+        <div class="page-header">
+            <h1>Create New Errand 🚀</h1>
+            <p style="color: var(--text-light); font-size: 1rem;">Get things done with the help of our community runners</p>
+        </div>
+        
+        <form action="{{ url_for('create_errand') }}" method="POST">
+            <!-- Errand Title -->
+            <div class="form-group">
+                <label for="title" class="required">Errand Title</label>
+                <input type="text" id="title" name="title" placeholder="e.g., Grocery Shopping, Package Delivery" required>
+                <div class="help-text">Be specific about what you need done</div>
+            </div>
+
+            <!-- Category and Budget -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="category" class="required">Category</label>
+                    <select id="category" name="category" required>
+                        <option value="">Select a category</option>
+                        <option value="shopping">🛒 Shopping</option>
+                        <option value="delivery">📦 Delivery</option>
+                        <option value="food">🍔 Food Pickup</option>
+                        <option value="cleaning">🧹 Cleaning</option>
+                        <option value="repair">🔧 Repair</option>
+                        <option value="pet_care">🐾 Pet Care</option>
+                        <option value="other">📋 Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="budget" class="required">Budget ($)</label>
+                    <input type="number" id="budget" name="budget" min="5" max="1000" step="0.01" placeholder="25.00" required>
+                    <div class="help-text">Minimum $5.00</div>
+                </div>
+            </div>
+
+            <!-- Location -->
+            <div class="form-group">
+                <label for="location" class="required">Location</label>
+                <input type="text" id="location" name="location" placeholder="e.g., 123 Main St, City, State" required>
+                <div class="help-text">Where does this errand need to be done?</div>
+            </div>
+
+            <!-- Deadline -->
+            <div class="form-group">
+                <label for="deadline" class="required">Deadline</label>
+                <input type="datetime-local" id="deadline" name="deadline" required>
+                <div class="help-text">When do you need this completed by?</div>
+            </div>
+
+            <!-- Description -->
+            <div class="form-group">
+                <label for="description" class="required">Detailed Description</label>
+                <textarea id="description" name="description" placeholder="Please provide detailed instructions for the runner. Include any specific items, locations, or special requirements..." required></textarea>
+                <div class="help-text">The more details, the better! Runners will use this information to complete your errand.</div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-success">Create Errand</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tips Section -->
+    <div class="tips-card">
+        <h3 style="margin-bottom: 1rem; color: var(--text-dark);">💡 Tips for Great Errands</h3>
+        <div class="tips-grid">
+            <div class="tip-item">• <strong>Be specific</strong> about what you need</div>
+            <div class="tip-item">• <strong>Set a reasonable budget</strong> for the task</div>
+            <div class="tip-item">• <strong>Provide clear location details</strong></div>
+            <div class="tip-item">• <strong>Include any special instructions</strong> or requirements</div>
+            <div class="tip-item">• <strong>Set a realistic deadline</strong> for completion</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Set minimum datetime to current time
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('deadline').min = now.toISOString().slice(0, 16);
+
+    // Set default deadline to 2 hours from now
+    const defaultDeadline = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+    document.getElementById('deadline').value = defaultDeadline.toISOString().slice(0, 16);
+
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const budget = parseFloat(document.getElementById('budget').value);
+        if (budget < 5) {
+            e.preventDefault();
+            alert('Minimum budget is $5.00');
+            document.getElementById('budget').focus();
+            return false;
+        }
+        
+        const deadline = new Date(document.getElementById('deadline').value);
+        if (deadline <= new Date()) {
+            e.preventDefault();
+            alert('Deadline must be in the future');
+            document.getElementById('deadline').focus();
+            return false;
+        }
+    });
+
+    // Real-time budget validation
+    document.getElementById('budget').addEventListener('input', function() {
+        const budget = parseFloat(this.value);
+        if (budget < 5) {
+            this.style.borderColor = 'var(--danger-color)';
+        } else {
+            this.style.borderColor = 'var(--border-color)';
+        }
+    });
+
+    // Real-time deadline validation
+    document.getElementById('deadline').addEventListener('change', function() {
+        const deadline = new Date(this.value);
+        if (deadline <= new Date()) {
+            this.style.borderColor = 'var(--danger-color)';
+        } else {
+            this.style.borderColor = 'var(--border-color)';
+        }
+    });
+</script>
+{% endblock %}

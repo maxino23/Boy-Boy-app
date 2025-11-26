@@ -1,0 +1,381 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Errands - Boy-Boy{% endblock %}
+
+{% block nav_links %}
+    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+    <a href="{{ url_for('browse_errands') }}" class="active">Browse Errands</a>
+    <a href="{{ url_for('profile') }}">Profile</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
+{% endblock %}
+
+{% block content %}
+<style>
+    .filters-section {
+        background: var(--card-bg);
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        margin-bottom: 2rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .filter-form {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        align-items: end;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .filter-label {
+        font-size: 0.9rem;
+        color: var(--text-light);
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    /* ADDED: INPUT STYLING FOR FILTERS */
+    .filter-form input[type="text"],
+    .filter-form input[type="number"],
+    .filter-form select {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 1rem;
+        background: var(--card-bg);
+        color: var(--text-dark);
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+        font-family: inherit;
+    }
+
+    .filter-form input[type="text"]:focus,
+    .filter-form input[type="number"]:focus,
+    .filter-form select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 20%, transparent);
+        background: var(--card-bg);
+    }
+
+    .filter-form input[type="text"]:hover,
+    .filter-form input[type="number"]:hover,
+    .filter-form select:hover {
+        border-color: color-mix(in srgb, var(--border-color) 70%, var(--primary-color) 30%);
+    }
+
+    /* Select dropdown styling */
+    .filter-form select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 16px center;
+        background-size: 16px;
+        padding-right: 40px;
+        cursor: pointer;
+    }
+
+    [data-theme="dark"] .filter-form select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    }
+
+    /* Button styling */
+    .filter-form .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 24px;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        width: 100%;
+        text-align: center;
+    }
+
+    .filter-form .btn-primary {
+        background: var(--primary-color);
+    }
+
+    .filter-form .btn-primary:hover {
+        background: color-mix(in srgb, var(--primary-color) 90%, black);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px color-mix(in srgb, var(--primary-color) 30%, transparent);
+    }
+
+    .filter-form .btn-secondary {
+        background: var(--text-light);
+    }
+
+    .filter-form .btn-secondary:hover {
+        background: color-mix(in srgb, var(--text-light) 90%, black);
+        transform: translateY(-1px);
+    }
+
+    /* Placeholder styling */
+    .filter-form ::placeholder {
+        color: var(--text-light);
+        opacity: 0.7;
+    }
+
+    .errand-grid {
+        display: grid;
+        gap: 1.5rem;
+    }
+
+    .errand-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 2rem;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .errand-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow);
+    }
+
+    .errand-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+
+    .errand-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+    }
+
+    .errand-budget {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--secondary-color);
+    }
+
+    .errand-meta {
+        display: flex;
+        gap: 1.5rem;
+        color: var(--text-light);
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .errand-description {
+        color: var(--text-dark);
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+    }
+
+    .category-badge {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background: var(--primary-color);
+        color: white;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--text-light);
+    }
+
+    .empty-state h3 {
+        margin-bottom: 0.5rem;
+        color: var(--text-dark);
+    }
+
+    /* Accept button styling */
+    .btn-success {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 1.5rem;
+        background: var(--secondary-color);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+
+    .btn-success:hover {
+        background: color-mix(in srgb, var(--secondary-color) 90%, black);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px color-mix(in srgb, var(--secondary-color) 30%, transparent);
+    }
+
+    @media (max-width: 768px) {
+        .errand-header {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .errand-meta {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .filter-form {
+            grid-template-columns: 1fr;
+        }
+        
+        .filters-section {
+            padding: 1.5rem;
+        }
+        
+        .errand-card {
+            padding: 1.5rem;
+        }
+    }
+</style>
+
+<div class="container" style="max-width: 1200px; margin: 0 auto; padding: 0 2rem;">
+    <!-- Page Header -->
+    <div style="margin-bottom: 2rem;">
+        <h1 style="color: var(--text-dark); margin-bottom: 0.5rem;">Browse Available Errands 🏃‍♂️</h1>
+        <p style="color: var(--text-light);">Find errands in your area and start earning money!</p>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="filters-section">
+        <h3 style="margin-bottom: 1.5rem; color: var(--text-dark);">Filter Errands</h3>
+        <form method="GET" class="filter-form">
+            <div class="filter-group">
+                <label class="filter-label">Category</label>
+                <select name="category">
+                    <option value="">All Categories</option>
+                    <option value="shopping" {% if request.args.get('category') == 'shopping' %}selected{% endif %}>🛒 Shopping</option>
+                    <option value="delivery" {% if request.args.get('category') == 'delivery' %}selected{% endif %}>📦 Delivery</option>
+                    <option value="food" {% if request.args.get('category') == 'food' %}selected{% endif %}>🍔 Food</option>
+                    <option value="cleaning" {% if request.args.get('category') == 'cleaning' %}selected{% endif %}>🧹 Cleaning</option>
+                    <option value="repair" {% if request.args.get('category') == 'repair' %}selected{% endif %}>🔧 Repair</option>
+                    <option value="pet_care" {% if request.args.get('category') == 'pet_care' %}selected{% endif %}>🐾 Pet Care</option>
+                    <option value="other" {% if request.args.get('category') == 'other' %}selected{% endif %}>📋 Other</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">Max Budget</label>
+                <input type="number" name="max_budget" placeholder="e.g., 50" value="{{ request.args.get('max_budget', '') }}" min="5" step="1">
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">Location</label>
+                <input type="text" name="location" placeholder="e.g., New York" value="{{ request.args.get('location', '') }}">
+            </div>
+            
+            <div class="filter-group">
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
+                <a href="{{ url_for('browse_errands') }}" class="btn btn-secondary" style="margin-top: 0.5rem; text-align: center;">Clear Filters</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Errands Grid -->
+    <div class="errand-grid">
+        {% if errands %}
+            {% for errand in errands %}
+            <div class="errand-card">
+                <div class="category-badge">
+                    {% if errand.category == 'shopping' %}🛒 Shopping
+                    {% elif errand.category == 'delivery' %}📦 Delivery
+                    {% elif errand.category == 'food' %}🍔 Food
+                    {% elif errand.category == 'cleaning' %}🧹 Cleaning
+                    {% elif errand.category == 'repair' %}🔧 Repair
+                    {% elif errand.category == 'pet_care' %}🐾 Pet Care
+                    {% else %}📋 Other{% endif %}
+                </div>
+                
+                <div class="errand-header">
+                    <div style="flex: 1;">
+                        <h3 class="errand-title">{{ errand.title }}</h3>
+                        <div class="errand-meta">
+                            <div class="meta-item">
+                                <span>📍</span>
+                                <span>{{ errand.location }}</span>
+                            </div>
+                            <div class="meta-item">
+                                <span>⏰</span>
+                                <span>{{ errand.deadline.strftime('%b %d, %Y %I:%M %p') }}</span>
+                            </div>
+                            <div class="meta-item">
+                                <span>👤</span>
+                                <span>Posted by {{ errand.poster.name }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="errand-budget">${{ "%.2f" | format(errand.budget) }}</div>
+                </div>
+                
+                <p class="errand-description">{{ errand.description }}</p>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="font-size: 0.9rem; color: var(--text-light);">
+                        Posted {{ errand.created_at.strftime('%b %d at %I:%M %p') }}
+                    </div>
+                    <a href="{{ url_for('accept_errand', errand_id=errand.id) }}" class="btn btn-success" onclick="return confirm('Are you sure you want to accept this errand?')">
+                        Accept Errand
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <h3>No errands available</h3>
+                <p>There are currently no errands matching your criteria.</p>
+                <p style="margin-top: 1rem;">Check back later or try different filters.</p>
+                <a href="{{ url_for('browse_errands') }}" class="btn btn-primary" style="margin-top: 1rem;">Show All Errands</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Auto-submit form when select changes
+    document.querySelectorAll('select').forEach(select => {
+        select.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+
+    // Add focus styles for better UX
+    document.querySelectorAll('.filter-form input, .filter-form select').forEach(input => {
+        input.addEventListener('focus', function() {
+            this.style.borderColor = 'var(--primary-color)';
+        });
+        
+        input.addEventListener('blur', function() {
+            this.style.borderColor = 'var(--border-color)';
+        });
+    });
+</script>
+{% endblock %}

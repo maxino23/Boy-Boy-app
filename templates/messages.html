@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Messages - Boy-Boy{% endblock %}
+
+{% block nav_links %}
+    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+    {% if session.user_role == 'user' %}
+        <a href="{{ url_for('create_errand') }}">Create Errand</a>
+    {% else %}
+        <a href="{{ url_for('browse_errands') }}">Browse Errands</a>
+    {% endif %}
+    <a href="{{ url_for('messages') }}" class="active">Messages</a>
+    <a href="{{ url_for('profile') }}">Profile</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
+{% endblock %}
+
+{% block content %}
+<style>
+    .conversations-list {
+        background: var(--card-bg);
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+    }
+
+    .conversation-item {
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        transition: background-color 0.2s ease;
+        cursor: pointer;
+        text-decoration: none;
+        display: block;
+        color: inherit;
+    }
+
+    .conversation-item:hover {
+        background: var(--bg-color);
+    }
+
+    .conversation-item:last-child {
+        border-bottom: none;
+    }
+
+    .conversation-header {
+        display: flex;
+        justify-content: between;
+        align-items: flex-start;
+        margin-bottom: 0.5rem;
+    }
+
+    .conversation-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 0.25rem;
+    }
+
+    .conversation-meta {
+        display: flex;
+        gap: 1rem;
+        color: var(--text-light);
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .user-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        background: var(--primary-color);
+        color: white;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .user-badge.runner {
+        background: var(--secondary-color);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--text-light);
+    }
+
+    .empty-state h3 {
+        margin-bottom: 0.5rem;
+        color: var(--text-dark);
+    }
+
+    .unread-badge {
+        background: var(--danger-color);
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-left: auto;
+    }
+
+    @media (max-width: 768px) {
+        .conversation-meta {
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+    }
+</style>
+
+<div class="container" style="max-width: 800px; margin: 0 auto; padding: 0 2rem;">
+    <!-- Page Header -->
+    <div style="margin-bottom: 2rem;">
+        <h1 style="color: var(--text-dark); margin-bottom: 0.5rem;">Messages 💬</h1>
+        <p style="color: var(--text-light);">Communicate with other users about your errands</p>
+    </div>
+
+    <!-- Conversations List -->
+    <div class="conversations-list">
+        {% if conversations %}
+            {% for conv in conversations %}
+            <a href="{{ url_for('conversation', errand_id=conv.errand.id) }}" class="conversation-item">
+                <div class="conversation-header">
+                    <div style="flex: 1;">
+                        <h3 class="conversation-title">{{ conv.errand.title }}</h3>
+                        <div class="conversation-meta">
+                            <span>
+                                {% if conv.user_role == 'poster' %}
+                                    🏃‍♂️ Runner: 
+                                {% else %}
+                                    👤 Poster: 
+                                {% endif %}
+                                {{ conv.other_user.name }}
+                            </span>
+                            <span>💰 ${{ "%.2f" | format(conv.errand.budget) }}</span>
+                            <span class="status-badge status-{{ conv.errand.status }}" style="font-size: 0.8rem;">
+                                {{ conv.errand.status | replace('_', ' ') | title }}
+                            </span>
+                        </div>
+                        <div style="color: var(--text-light); font-size: 0.9rem;">
+                            {{ conv.errand.description[:100] }}{% if conv.errand.description|length > 100 %}...{% endif %}
+                        </div>
+                    </div>
+                    <!-- Unread badge would go here -->
+                </div>
+            </a>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <h3>No conversations yet</h3>
+                <p>
+                    {% if session.user_role == 'user' %}
+                        Start a conversation by having a runner accept your errand!
+                    {% else %}
+                        Start a conversation by accepting an errand!
+                    {% endif %}
+                </p>
+                <div style="margin-top: 1.5rem;">
+                    {% if session.user_role == 'user' %}
+                        <a href="{{ url_for('create_errand') }}" class="btn btn-primary">Create Errand</a>
+                    {% else %}
+                        <a href="{{ url_for('browse_errands') }}" class="btn btn-primary">Browse Errands</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Update unread count in navbar
+    function updateUnreadCount() {
+        fetch('/unread-count')
+            .then(response => response.json())
+            .then(data => {
+                const badge = document.getElementById('unreadBadge');
+                if (badge) {
+                    if (data.count > 0) {
+                        badge.textContent = data.count;
+                        badge.style.display = 'flex';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            });
+    }
+
+    // Update every 30 seconds
+    updateUnreadCount();
+    setInterval(updateUnreadCount, 30000);
+</script>
+{% endblock %}

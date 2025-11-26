@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Make Payment - Boy.Boy{% endblock %}
+
+{% block content %}
+<style>
+    .payment-methods {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .payment-method {
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .payment-method:hover {
+        border-color: var(--primary-color);
+        background: var(--bg-color);
+    }
+    
+    .payment-method.selected {
+        border-color: var(--primary-color);
+        background: var(--primary-color);
+        color: white;
+    }
+    
+    .payment-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .contact-info {
+        background: var(--bg-color);
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+    }
+</style>
+
+<div class="container" style="max-width: 800px; margin: 0 auto; padding: 0 2rem;">
+    <div class="card">
+        <h1 style="text-align: center; margin-bottom: 2rem;">Make Payment</h1>
+        
+        <!-- Errand Info -->
+        <div style="background: var(--bg-color); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+            <h3 style="margin-bottom: 0.5rem;">{{ errand.title }}</h3>
+            <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <strong>Amount:</strong> 
+                    <span style="color: var(--secondary-color); font-size: 1.25rem; font-weight: 700;">
+                        GHS {{ "%.2f" | format(errand.budget) }}
+                    </span>
+                </div>
+                <div>
+                    <strong>Runner:</strong> {{ errand.runner_user.name }}
+                </div>
+                <div>
+                    <strong>Status:</strong> 
+                    <span class="status-badge status-completed">Completed</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Runner Contact Info -->
+        <div class="contact-info">
+            <h4 style="margin-bottom: 1rem;">📞 Runner's Contact Information</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <div>
+                    <strong>Name:</strong> {{ errand.runner_user.name }}
+                </div>
+                {% if errand.runner_user.phone %}
+                <div>
+                    <strong>Phone:</strong> {{ errand.runner_user.phone }}
+                </div>
+                {% else %}
+                <div>
+                    <strong>Phone:</strong> 
+                    <a href="{{ url_for('conversation', errand_id=errand.id) }}" class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                        Ask for phone number
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('submit_payment', errand_id=errand.id) }}" enctype="multipart/form-data">
+            <!-- Payment Method Selection -->
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 1rem; font-weight: 600;">Select Payment Method</label>
+                <div class="payment-methods">
+                    <div class="payment-method" data-method="mtn_mobile_money">
+                        <div class="payment-icon">📱</div>
+                        <div>MTN Mobile Money</div>
+                    </div>
+                    <div class="payment-method" data-method="vodafone_cash">
+                        <div class="payment-icon">📞</div>
+                        <div>Vodafone Cash</div>
+                    </div>
+                    <div class="payment-method" data-method="airteltigo_money">
+                        <div class="payment-icon">📶</div>
+                        <div>AirtelTigo Money</div>
+                    </div>
+                    <div class="payment-method" data-method="cash">
+                        <div class="payment-icon">💵</div>
+                        <div>Cash</div>
+                    </div>
+                </div>
+                <input type="hidden" name="payment_method" id="paymentMethodInput" required>
+            </div>
+
+            <!-- Phone Number -->
+            <div class="form-group">
+                <label for="payer_phone">Your Phone Number</label>
+                <input type="tel" id="payer_phone" name="payer_phone" placeholder="e.g., 0551234567" required>
+                <div class="help-text">The number you'll use to make the payment</div>
+            </div>
+
+            <!-- Payment Proof Upload -->
+            <div class="form-group">
+                <label for="payment_proof">Payment Proof (Optional)</label>
+                <input type="file" id="payment_proof" name="payment_proof" accept="image/*">
+                <div class="help-text">Upload a screenshot of your payment confirmation</div>
+            </div>
+
+            <!-- Additional Notes -->
+            <div class="form-group">
+                <label for="notes">Additional Notes (Optional)</label>
+                <textarea id="notes" name="notes" placeholder="Any additional information about the payment..." rows="3"></textarea>
+            </div>
+
+            <!-- Submit Button -->
+            <div style="text-align: center; margin-top: 2rem;">
+                <button type="submit" class="btn btn-success" style="padding: 1rem 2rem; font-size: 1.1rem;">
+                    ✅ Submit Payment of GHS {{ "%.2f" | format(errand.budget) }}
+                </button>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary" style="margin-left: 1rem;">
+                    Cancel
+                </a>
+            </div>
+        </form>
+
+        <!-- Payment Instructions -->
+        <div style="margin-top: 2rem; padding: 1.5rem; background: #f0f9ff; border-radius: 8px; border: 1px solid #bae6fd;">
+            <h4 style="color: #0369a1; margin-bottom: 1rem;">💡 How to Pay:</h4>
+            <ol style="color: #475569; line-height: 1.6;">
+                <li>Select your preferred payment method above</li>
+                <li>Use the runner's phone number to make the payment</li>
+                <li>Take a screenshot of the payment confirmation</li>
+                <li>Submit the form to notify the runner</li>
+                <li>The runner will confirm when they receive the payment</li>
+            </ol>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Payment method selection
+    document.querySelectorAll('.payment-method').forEach(method => {
+        method.addEventListener('click', function() {
+            // Remove selected class from all methods
+            document.querySelectorAll('.payment-method').forEach(m => {
+                m.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked method
+            this.classList.add('selected');
+            
+            // Update hidden input
+            document.getElementById('paymentMethodInput').value = this.dataset.method;
+        });
+    });
+
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const method = document.getElementById('paymentMethodInput').value;
+        const phone = document.getElementById('payer_phone').value;
+        
+        if (!method) {
+            e.preventDefault();
+            alert('Please select a payment method');
+            return false;
+        }
+        
+        if (!phone) {
+            e.preventDefault();
+            alert('Please enter your phone number');
+            return false;
+        }
+    });
+</script>
+{% endblock %}

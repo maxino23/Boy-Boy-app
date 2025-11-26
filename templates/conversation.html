@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block title %}Conversation - Boy-Boy{% endblock %}
+
+{% block nav_links %}
+    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+    {% if session.user_role == 'user' %}
+        <a href="{{ url_for('create_errand') }}">Create Errand</a>
+    {% else %}
+        <a href="{{ url_for('browse_errands') }}">Browse Errands</a>
+    {% endif %}
+    <a href="{{ url_for('messages') }}">Messages</a>
+    <a href="{{ url_for('profile') }}">Profile</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
+{% endblock %}
+
+{% block content %}
+<style>
+    .conversation-header {
+        background: var(--card-bg);
+        padding: 1.5rem;
+        border-radius: 12px 12px 0 0;
+        border: 1px solid var(--border-color);
+        border-bottom: none;
+    }
+
+    .messages-container {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-top: none;
+        border-bottom: none;
+        height: 60vh;
+        overflow-y: auto;
+        padding: 1rem;
+    }
+
+    .message-form {
+        background: var(--card-bg);
+        padding: 1.5rem;
+        border-radius: 0 0 12px 12px;
+        border: 1px solid var(--border-color);
+        border-top: none;
+    }
+
+    .message {
+        margin-bottom: 1.5rem;
+        display: flex;
+    }
+
+    .message.sent {
+        justify-content: flex-end;
+    }
+
+    .message.received {
+        justify-content: flex-start;
+    }
+
+    .message-bubble {
+        max-width: 70%;
+        padding: 1rem 1.25rem;
+        border-radius: 18px;
+        position: relative;
+    }
+
+    .message.sent .message-bubble {
+        background: var(--primary-color);
+        color: white;
+        border-bottom-right-radius: 4px;
+    }
+
+    .message.received .message-bubble {
+        background: var(--border-color);
+        color: var(--text-dark);
+        border-bottom-left-radius: 4px;
+    }
+
+    .message-content {
+        line-height: 1.4;
+        word-wrap: break-word;
+    }
+
+    .message-time {
+        font-size: 0.75rem;
+        opacity: 0.7;
+        margin-top: 0.5rem;
+        text-align: right;
+    }
+
+    .message.received .message-time {
+        text-align: left;
+    }
+
+    .empty-messages {
+        text-align: center;
+        padding: 3rem;
+        color: var(--text-light);
+    }
+
+    .empty-messages h3 {
+        margin-bottom: 0.5rem;
+        color: var(--text-dark);
+    }
+
+    .message-input-group {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .message-input {
+        flex: 1;
+        padding: 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 25px;
+        background: var(--bg-color);
+        color: var(--text-dark);
+        font-size: 1rem;
+        outline: none;
+        resize: none;
+        min-height: 50px;
+        max-height: 120px;
+    }
+
+    .message-input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+    }
+
+    .send-btn {
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .send-btn:hover {
+        background: #4338ca;
+    }
+
+    .send-btn:disabled {
+        background: var(--text-light);
+        cursor: not-allowed;
+    }
+
+    .errand-info {
+        background: var(--bg-color);
+        padding: 1rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+        .message-bubble {
+            max-width: 85%;
+        }
+        
+        .message-input-group {
+            flex-direction: column;
+        }
+        
+        .send-btn {
+            align-self: flex-end;
+            width: 100%;
+            border-radius: 25px;
+        }
+    }
+</style>
+
+<div class="container" style="max-width: 800px; margin: 0 auto; padding: 0 2rem;">
+    <!-- Conversation Header -->
+    <div class="conversation-header">
+        <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 1rem;">
+            <a href="{{ url_for('messages') }}" class="btn btn-secondary" style="text-decoration: none;">← Back</a>
+            <h1 style="color: var(--text-dark); margin: 0; text-align: center; flex: 1;">{{ errand.title }}</h1>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <div style="font-weight: 600; color: var(--text-dark);">
+                    {% if user_role == 'poster' %}
+                        🏃‍♂️ Talking with Runner: 
+                    {% else %}
+                        👤 Talking with Poster: 
+                    {% endif %}
+                    {{ other_user.name }}
+                </div>
+                <div style="color: var(--text-light); font-size: 0.9rem;">
+                    Errand Status: <span class="status-badge status-{{ errand.status }}">{{ errand.status | replace('_', ' ') | title }}</span>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-weight: 600; color: var(--secondary-color); font-size: 1.25rem;">
+                    ${{ "%.2f" | format(errand.budget) }}
+                </div>
+                <div style="color: var(--text-light); font-size: 0.9rem;">
+                    Due: {{ errand.deadline.strftime('%b %d, %Y') }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Errand Info -->
+        <div class="errand-info">
+            <strong>📍 Location:</strong> {{ errand.location }}<br>
+            <strong>📝 Description:</strong> {{ errand.description }}
+        </div>
+    </div>
+
+    <!-- Messages Container -->
+    <div class="messages-container" id="messagesContainer">
+        {% if messages %}
+            {% for message in messages %}
+            <div class="message {% if message.sender_id == session.user_id %}sent{% else %}received{% endif %}">
+                <div class="message-bubble">
+                    <div class="message-content">{{ message.content }}</div>
+                    <div class="message-time">
+                        {{ message.created_at.strftime('%I:%M %p') }} • {{ message.created_at.strftime('%b %d') }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-messages">
+                <h3>No messages yet</h3>
+                <p>Start the conversation by sending a message!</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Message Form -->
+    <form method="POST" action="{{ url_for('send_message', errand_id=errand.id) }}" class="message-form">
+        <div class="message-input-group">
+            <textarea 
+                name="content" 
+                class="message-input" 
+                placeholder="Type your message..." 
+                required
+                oninput="autoResize(this)"
+            ></textarea>
+            <button type="submit" class="send-btn" id="sendBtn">
+                📤
+            </button>
+        </div>
+        <div style="text-align: center; margin-top: 0.5rem;">
+            <small style="color: var(--text-light);">
+                Press Enter to send, Shift+Enter for new line
+            </small>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Auto-resize textarea
+    function autoResize(textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+        
+        // Enable/disable send button
+        document.getElementById('sendBtn').disabled = textarea.value.trim() === '';
+    }
+
+    // Scroll to bottom of messages
+    function scrollToBottom() {
+        const container = document.getElementById('messagesContainer');
+        container.scrollTop = container.scrollHeight;
+    }
+
+    // Handle Enter key (send on Enter, new line on Shift+Enter)
+    document.querySelector('.message-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (this.value.trim()) {
+                this.form.submit();
+            }
+        }
+    });
+
+    // Auto-focus message input
+    document.querySelector('.message-input').focus();
+
+    // Scroll to bottom on page load
+    window.addEventListener('load', scrollToBottom);
+
+    // Auto-refresh messages every 10 seconds
+    setInterval(() => {
+        fetch(window.location.href)
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const newDoc = parser.parseFromString(html, 'text/html');
+                const newMessages = newDoc.querySelector('.messages-container').innerHTML;
+                const currentMessages = document.querySelector('.messages-container').innerHTML;
+                
+                if (newMessages !== currentMessages) {
+                    document.querySelector('.messages-container').innerHTML = newMessages;
+                    scrollToBottom();
+                }
+            });
+    }, 10000);
+</script>
+{% endblock %}

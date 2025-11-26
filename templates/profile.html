@@ -1,0 +1,828 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - Boy-Boy{% endblock %}
+
+{% block nav_links %}
+    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+    {% if session.user_role == 'user' %}
+        <a href="{{ url_for('create_errand') }}">Create Errand</a>
+    {% else %}
+        <a href="{{ url_for('home') }}">Browse Errands</a>
+    {% endif %}
+    <a href="{{ url_for('profile') }}" class="active">Profile</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
+{% endblock %}
+
+{% block content %}
+<style>
+    .profile-header {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        margin-bottom: 2rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        font-weight: 700;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .profile-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .avatar-upload {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 0.8rem;
+        transition: all 0.3s ease;
+    }
+
+    .avatar-upload:hover {
+        background: var(--secondary-color);
+        transform: scale(1.1);
+    }
+
+    .profile-info h1 {
+        margin-bottom: 0.5rem;
+        color: var(--text-dark);
+        font-weight: 800;
+    }
+
+    .role-badge {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background: var(--secondary-color);
+        color: white;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: capitalize;
+    }
+
+    .role-badge.runner {
+        background: var(--primary-color);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: var(--card-bg);
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        text-align: center;
+        border-left: 4px solid var(--primary-color);
+        border: 1px solid var(--border-color);
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--primary-color);
+        display: block;
+    }
+
+    .stat-label {
+        color: var(--text-light);
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .info-label {
+        font-size: 0.9rem;
+        color: var(--text-light);
+        font-weight: 600;
+    }
+
+    .info-value {
+        font-size: 1rem;
+        color: var(--text-dark);
+        font-weight: 500;
+    }
+
+    .section {
+        margin-bottom: 2rem;
+    }
+
+    .recent-activity {
+        background: var(--card-bg);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        border: 1px solid var(--border-color);
+    }
+
+    .activity-item {
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+
+    .activity-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+
+    .activity-icon.primary {
+        background: #e0e7ff;
+        color: var(--primary-color);
+    }
+
+    .activity-icon.success {
+        background: #d1fae5;
+        color: var(--secondary-color);
+    }
+
+    .activity-icon.warning {
+        background: #fef3c7;
+        color: var(--warning-color);
+    }
+
+    .activity-content {
+        flex: 1;
+    }
+
+    .activity-title {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .activity-time {
+        font-size: 0.8rem;
+        color: var(--text-light);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--text-light);
+    }
+
+    .empty-state h3 {
+        margin-bottom: 0.5rem;
+        color: var(--text-dark);
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    label {
+        display: block;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+        color: var(--text-light);
+        font-weight: 600;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--border-color);
+        font-size: 1rem;
+        outline: none;
+        transition: border-color .2s ease, box-shadow .2s ease;
+        background: var(--card-bg);
+        color: var(--text-dark);
+    }
+
+    input:focus, select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    .file-input-wrapper {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+    }
+
+    .file-input {
+        position: absolute;
+        left: -9999px;
+    }
+
+    .file-input-label {
+        display: block;
+        padding: 0.75rem;
+        border: 2px dashed var(--border-color);
+        border-radius: 0.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: var(--bg-color);
+    }
+
+    .file-input-label:hover {
+        border-color: var(--primary-color);
+        background: var(--card-bg);
+    }
+
+    .file-input-label.has-file {
+        border-color: var(--secondary-color);
+        background: #d1fae5;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 2rem;
+    }
+
+    .help-text {
+        font-size: 0.8rem;
+        color: var(--text-light);
+        margin-top: 0.25rem;
+    }
+
+    .required::after {
+        content: " *";
+        color: var(--danger-color);
+    }
+
+    .tab-container {
+        margin-top: 2rem;
+    }
+
+    .tabs {
+        display: flex;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 2rem;
+    }
+
+    .tab {
+        padding: 1rem 2rem;
+        background: none;
+        border: none;
+        color: var(--text-light);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-bottom: 2px solid transparent;
+    }
+
+    .tab.active {
+        color: var(--primary-color);
+        border-bottom-color: var(--primary-color);
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .picture-preview {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        overflow: hidden;
+        margin: 0 auto 1rem;
+        border: 3px solid var(--primary-color);
+    }
+
+    .picture-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .upload-instructions {
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+        .profile-header {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .stats-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+        
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .tabs {
+            flex-direction: column;
+        }
+        
+        .tab {
+            text-align: center;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="container" style="max-width: 1000px; margin: 0 auto; padding: 0 2rem;">
+    <!-- Profile Header -->
+    <div class="card">
+        <div class="profile-header">
+            <div class="profile-avatar">
+                {% if user.profile_picture and user.profile_picture != 'default_avatar.png' %}
+                    <img src="{{ url_for('static', filename='profile_pics/' + user.profile_picture) }}" 
+                         alt="{{ user.name }}" 
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; font-size: 2.5rem; font-weight: 700;">
+                        {{ user.name[0] | upper }}
+                    </div>
+                {% else %}
+                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; font-size: 2.5rem; font-weight: 700;">
+                        {{ user.name[0] | upper }}
+                    </div>
+                {% endif %}
+                <button class="avatar-upload" onclick="document.getElementById('profile-picture-input').click()" title="Change profile picture">
+                    📷
+                </button>
+            </div>
+            <div class="profile-info">
+                <h1>{{ user.name }}</h1>
+                <div class="role-badge {{ user.role }}">
+                    {{ user.role }} {% if user.role == 'runner' %}🏃‍♂️{% else %}👤{% endif %}
+                </div>
+                <p style="color: var(--text-light); margin-top: 0.5rem;">Member since {{ user.created_at.strftime('%B %Y') }}</p>
+            </div>
+        </div>
+
+        <!-- Hidden file input for avatar upload -->
+        <form id="avatar-upload-form" action="{{ url_for('update_profile') }}" method="POST" enctype="multipart/form-data" style="display: none;">
+            <input type="file" id="profile-picture-input" name="profile_picture" accept="image/*" onchange="this.form.submit()">
+        </form>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            {% if user.role == 'user' %}
+                <div class="stat-card">
+                    <span class="stat-number">{{ user.errands_posted | length }}</span>
+                    <span class="stat-label">Total Errands Posted</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{{ user.errands_posted | selectattr('status', 'equalto', 'open') | list | length }}</span>
+                    <span class="stat-label">Open Errands</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{{ user.errands_posted | selectattr('status', 'equalto', 'completed') | list | length }}</span>
+                    <span class="stat-label">Completed</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">${{ "%.2f" | format(user.errands_posted | sum(attribute='budget') or 0) }}</span>
+                    <span class="stat-label">Total Value</span>
+                </div>
+            {% else %}
+                <div class="stat-card">
+                    <span class="stat-number">{{ user.errands_accepted | length }}</span>
+                    <span class="stat-label">Errands Completed</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">${{ "%.2f" | format(user.errands_accepted | sum(attribute='budget') or 0) }}</span>
+                    <span class="stat-label">Total Earnings</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">5.0</span>
+                    <span class="stat-label">Average Rating</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{{ user.errands_accepted | selectattr('status', 'equalto', 'in_progress') | list | length }}</span>
+                    <span class="stat-label">In Progress</span>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Tab Container -->
+        <div class="tab-container">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('profile-tab')">Profile Info</button>
+                <button class="tab" onclick="switchTab('edit-profile-tab')">Edit Profile</button>
+                <button class="tab" onclick="switchTab('change-password-tab')">Change Password</button>
+                <button class="tab" onclick="switchTab('profile-picture-tab')">Profile Picture</button>
+            </div>
+
+            <!-- Profile Info Tab -->
+            <div id="profile-tab" class="tab-content active">
+                <!-- Personal Information -->
+                <div class="section">
+                    <h2 style="margin-bottom: 1.5rem; color: var(--text-dark); font-weight: 700;">Personal Information</h2>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Full Name</span>
+                            <span class="info-value">{{ user.name }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Email Address</span>
+                            <span class="info-value">{{ user.email }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Account Type</span>
+                            <span class="info-value">
+                                {% if user.role == 'user' %}
+                                    Errand Requester 👤
+                                {% else %}
+                                    Errand Runner 🏃‍♂️
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Member Since</span>
+                            <span class="info-value">{{ user.created_at.strftime('%B %d, %Y') }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+                </div>
+            </div>
+
+            <!-- Edit Profile Tab -->
+            <div id="edit-profile-tab" class="tab-content">
+                <h2 style="margin-bottom: 1.5rem; color: var(--text-dark); font-weight: 700;">Edit Profile Information</h2>
+                
+                <form action="{{ url_for('update_profile') }}" method="POST">
+                    <div class="form-group">
+                        <label for="name" class="required">Full Name</label>
+                        <input type="text" id="name" name="name" value="{{ user.name }}" required>
+                        <div class="help-text">Your display name that others will see</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" name="phone" value="{{ user.phone or '' }}" placeholder="+1234567890">
+                        <div class="help-text">Optional - for payment notifications</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" value="{{ user.email }}" disabled style="background: var(--bg-color);">
+                        <div class="help-text">Email cannot be changed for security reasons</div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="switchTab('profile-tab')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Change Password Tab -->
+            <div id="change-password-tab" class="tab-content">
+                <h2 style="margin-bottom: 1.5rem; color: var(--text-dark); font-weight: 700;">Change Password</h2>
+                
+                <form action="{{ url_for('update_profile') }}" method="POST">
+                    <div class="form-group">
+                        <label for="current_password" class="required">Current Password</label>
+                        <input type="password" id="current_password" name="current_password" required>
+                        <div class="help-text">Enter your current password to make changes</div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="new_password" class="required">New Password</label>
+                            <input type="password" id="new_password" name="new_password" required minlength="6">
+                            <div class="help-text">Minimum 6 characters</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confirm_password" class="required">Confirm New Password</label>
+                            <input type="password" id="confirm_password" name="confirm_password" required minlength="6">
+                            <div class="help-text">Re-enter your new password</div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="switchTab('profile-tab')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Change Password</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Profile Picture Tab -->
+            <div id="profile-picture-tab" class="tab-content">
+                <h2 style="margin-bottom: 1.5rem; color: var(--text-dark); font-weight: 700;">Profile Picture</h2>
+                
+                <div class="upload-instructions">
+                    <div class="picture-preview">
+                        {% if user.profile_picture and user.profile_picture != 'default_avatar.png' %}
+                            <img src="{{ url_for('static', filename='profile_pics/' + user.profile_picture) }}" 
+                                 alt="{{ user.name }}"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; font-size: 3rem; font-weight: 700;">
+                                {{ user.name[0] | upper }}
+                            </div>
+                        {% else %}
+                            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; font-size: 3rem; font-weight: 700;">
+                                {{ user.name[0] | upper }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <p style="color: var(--text-light); margin-bottom: 1.5rem;">
+                        {% if user.profile_picture and user.profile_picture != 'default_avatar.png' %}
+                            Current profile picture
+                        {% else %}
+                            No profile picture set
+                        {% endif %}
+                    </p>
+                </div>
+
+                <form action="{{ url_for('update_profile') }}" method="POST" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="profile_picture_upload" class="required">Upload New Picture</label>
+                        <div class="file-input-wrapper">
+                            <input type="file" id="profile_picture_upload" name="profile_picture" 
+                                   accept="image/*" class="file-input" onchange="updateFileName(this)">
+                            <label for="profile_picture_upload" class="file-input-label" id="file-input-label">
+                                <span>📷 Click to choose a file or drag and drop</span>
+                                <br>
+                                <small style="color: var(--text-light);">PNG, JPG, GIF up to 5MB</small>
+                            </label>
+                        </div>
+                        <div class="help-text">Recommended: Square image, at least 200x200 pixels</div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="switchTab('profile-tab')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Upload Picture</button>
+                    </div>
+                </form>
+
+                {% if user.profile_picture and user.profile_picture != 'default_avatar.png' %}
+                <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border-color);">
+                    <h3 style="margin-bottom: 1rem; color: var(--text-dark);">Remove Picture</h3>
+                    <p style="color: var(--text-light); margin-bottom: 1rem;">
+                        Remove your current profile picture and use your initials instead.
+                    </p>
+                    <form action="{{ url_for('update_profile') }}" method="POST">
+                        <input type="hidden" name="remove_picture" value="true">
+                        <button type="submit" class="btn btn-danger">Remove Profile Picture</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="card">
+        <h2 style="margin-bottom: 1.5rem; color: var(--text-dark); font-weight: 700;">Recent Activity</h2>
+        
+        <div class="recent-activity">
+            {% if user.role == 'user' %}
+                {% if user.errands_posted %}
+                    {% for errand in user.errands_posted[-5:]|reverse %}
+                    <div class="activity-item">
+                        <div class="activity-icon {% if errand.status == 'completed' %}success{% elif errand.status == 'in_progress' %}warning{% else %}primary{% endif %}">
+                            {% if errand.status == 'completed' %}✅
+                            {% elif errand.status == 'in_progress' %}🔄
+                            {% else %}📝{% endif %}
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">
+                                {% if errand.status == 'completed' %}Errand Completed
+                                {% elif errand.status == 'in_progress' %}Errand In Progress
+                                {% else %}Errand Created{% endif %}
+                            </div>
+                            <div>{{ errand.title }}</div>
+                            <div class="activity-time">{{ errand.created_at.strftime('%b %d, %Y at %I:%M %p') }}</div>
+                        </div>
+                        <div style="font-weight: 600; color: var(--secondary-color);">
+                            ${{ "%.2f" | format(errand.budget) }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <h3>No activity yet</h3>
+                        <p>Create your first errand to get started!</p>
+                        <a href="{{ url_for('create_errand') }}" class="btn btn-primary" style="margin-top: 1rem;">Create First Errand</a>
+                    </div>
+                {% endif %}
+            {% else %}
+                {% if user.errands_accepted %}
+                    {% for errand in user.errands_accepted[-5:]|reverse %}
+                    <div class="activity-item">
+                        <div class="activity-icon {% if errand.status == 'completed' %}success{% elif errand.status == 'in_progress' %}warning{% else %}primary{% endif %}">
+                            {% if errand.status == 'completed' %}💰
+                            {% elif errand.status == 'in_progress' %}🚴‍♂️
+                            {% else %}📋{% endif %}
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">
+                                {% if errand.status == 'completed' %}Errand Completed
+                                {% elif errand.status == 'in_progress' %}Errand Accepted
+                                {% else %}Offer Made{% endif %}
+                            </div>
+                            <div>{{ errand.title }}</div>
+                            <div class="activity-time">{{ errand.created_at.strftime('%b %d, %Y at %I:%M %p') }}</div>
+                        </div>
+                        <div style="font-weight: 600; color: var(--secondary-color);">
+                            ${{ "%.2f" | format(errand.budget) }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <h3>No activity yet</h3>
+                        <p>Start accepting errands to build your profile!</p>
+                        <a href="{{ url_for('home') }}" class="btn btn-primary" style="margin-top: 1rem;">Browse Errands</a>
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Account Summary -->
+    <div class="card">
+        <h2 style="margin-bottom: 1.5rem; color: var(--text-dark); font-weight: 700;">Account Summary</h2>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-label">User ID</span>
+                <span class="info-value">#{{ user.id }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Account Status</span>
+                <span class="info-value" style="color: var(--secondary-color);">Active ✅</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Last Login</span>
+                <span class="info-value">Just now</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Trust Score</span>
+                <span class="info-value">100%</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Tab switching functionality
+    function switchTab(tabName) {
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Remove active class from all tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Show selected tab content
+        document.getElementById(tabName).classList.add('active');
+        
+        // Add active class to clicked tab
+        event.target.classList.add('active');
+    }
+
+    // Password confirmation validation
+    document.addEventListener('DOMContentLoaded', function() {
+        const passwordForm = document.querySelector('#change-password-tab form');
+        if (passwordForm) {
+            passwordForm.addEventListener('submit', function(e) {
+                const newPassword = document.getElementById('new_password').value;
+                const confirmPassword = document.getElementById('confirm_password').value;
+                
+                if (newPassword !== confirmPassword) {
+                    e.preventDefault();
+                    alert('New passwords do not match!');
+                    return false;
+                }
+                
+                if (newPassword.length < 6) {
+                    e.preventDefault();
+                    alert('Password must be at least 6 characters long!');
+                    return false;
+                }
+            });
+        }
+    });
+
+    // File input label update
+    function updateFileName(input) {
+        const label = document.getElementById('file-input-label');
+        if (input.files.length > 0) {
+            label.innerHTML = `
+                <span>✅ ${input.files[0].name}</span>
+                <br>
+                <small style="color: var(--text-light);">Click to choose a different file</small>
+            `;
+            label.classList.add('has-file');
+        } else {
+            label.innerHTML = `
+                <span>📷 Click to choose a file or drag and drop</span>
+                <br>
+                <small style="color: var(--text-light);">PNG, JPG, GIF up to 5MB</small>
+            `;
+            label.classList.remove('has-file');
+        }
+    }
+
+    // Drag and drop functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('profile_picture_upload');
+        const fileLabel = document.getElementById('file-input-label');
+
+        if (fileLabel) {
+            fileLabel.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                fileLabel.style.borderColor = 'var(--primary-color)';
+                fileLabel.style.background = 'var(--card-bg)';
+            });
+
+            fileLabel.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                fileLabel.style.borderColor = 'var(--border-color)';
+                fileLabel.style.background = 'var(--bg-color)';
+            });
+
+            fileLabel.addEventListener('drop', function(e) {
+                e.preventDefault();
+                fileLabel.style.borderColor = 'var(--border-color)';
+                fileLabel.style.background = 'var(--bg-color)';
+                
+                if (e.dataTransfer.files.length > 0) {
+                    fileInput.files = e.dataTransfer.files;
+                    updateFileName(fileInput);
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
