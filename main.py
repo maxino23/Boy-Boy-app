@@ -145,7 +145,105 @@ def is_admin():
     return user and (user.is_admin or user.email == 'admin@boyboy.com')
 
 # Initialize database with sample data
+# Initialize database with better error handling
 def init_db():
+    with app.app_context():
+        max_retries = 3
+        retry_delay = 2  # seconds
+        
+        for attempt in range(max_retries):
+            try:
+                # Check if tables already exist
+                inspector = db.inspect(db.engine)
+                if not inspector.has_table("user"):  # Check if user table exists
+                    db.create_all()
+                    print("✅ Database tables created successfully!")
+                    
+                    # Add sample data if no users exist
+                    if User.query.count() == 0:
+                        add_sample_data()
+                        print("✅ Sample data added!")
+                else:
+                    print("✅ Database tables already exist")
+                break
+            except Exception as e:
+                print(f"❌ Database attempt {attempt + 1} failed: {e}")
+                if attempt < max_retries - 1:
+                    print(f"🔄 Retrying in {retry_delay} seconds...")
+                    import time
+                    time.sleep(retry_delay)
+                else:
+                    print("💥 All database connection attempts failed")
+                    logger.error(f"Database initialization failed after {max_retries} attempts: {e}")
+    with app.app_context():
+        max_retries = 3
+        retry_delay = 2  # seconds
+        
+        for attempt in range(max_retries):
+            try:
+                db.create_all()
+                print("✅ Database tables created successfully!")
+                
+                # Add sample data if no users exist
+                if User.query.count() == 0:
+                    add_sample_data()
+                    print("✅ Sample data added!")
+                break
+            except Exception as e:
+                print(f"❌ Database attempt {attempt + 1} failed: {e}")
+                if attempt < max_retries - 1:
+                    print(f"🔄 Retrying in {retry_delay} seconds...")
+                    import time
+                    time.sleep(retry_delay)
+                else:
+                    print("💥 All database connection attempts failed")
+                    logger.error(f"Database initialization failed after {max_retries} attempts: {e}")
+
+# Initialize database on first request (Flask 2.3+ compatible)
+@app.before_request
+def initialize_database():
+    if not hasattr(app, 'database_initialized'):
+        try:
+            init_db()
+            app.database_initialized = True
+            print("✅ Database initialization completed!")
+        except Exception as e:
+            print(f"❌ Database initialization failed: {e}")
+    with app.app_context():
+        max_retries = 3
+        retry_delay = 2  # seconds
+        
+        for attempt in range(max_retries):
+            try:
+                db.create_all()
+                print("✅ Database tables created successfully!")
+                
+                # Add sample data if no users exist
+                if User.query.count() == 0:
+                    add_sample_data()
+                    print("✅ Sample data added!")
+                break
+            except Exception as e:
+                print(f"❌ Database attempt {attempt + 1} failed: {e}")
+                if attempt < max_retries - 1:
+                    print(f"🔄 Retrying in {retry_delay} seconds...")
+                    import time
+                    time.sleep(retry_delay)
+                else:
+                    print("💥 All database connection attempts failed")
+                    logger.error(f"Database initialization failed after {max_retries} attempts: {e}")
+
+# Force database creation on startup
+# Initialize database on first request
+@app.before_request
+def initialize_database():
+    # Check if we've already initialized
+    if not hasattr(app, 'database_initialized'):
+        try:
+            init_db()
+            app.database_initialized = True
+        except Exception as e:
+            print(f"❌ Database initialization failed: {e}")
     with app.app_context():
         try:
             db.create_all()
@@ -1108,6 +1206,25 @@ if __name__ == '__main__':
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     os.makedirs(PROFILE_PICS_FOLDER, exist_ok=True)
     
+if __name__ == '__main__':
+    # Create upload folders if they don't exist
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    os.makedirs(PROFILE_PICS_FOLDER, exist_ok=True)
+    
+    # Initialize database when app starts
+    print("🔄 Initializing database...")
+    init_db()
+    
+    # Get port from environment variable (for Railway) or default to 5000
+    port = int(os.environ.get('PORT', 5000))
+    
+    # Run the app
+    print("🚀 Starting Boy-Boy Errand App...")
+    print(f"✨ Server running at: http://0.0.0.0:{port}")
+    print(f"🔧 Debug mode: {os.environ.get('FLASK_DEBUG', 'False')}")
+    
+    app.run(debug=False, host='0.0.0.0', port=port)
+
     # Initialize database when app starts
     init_db()
     

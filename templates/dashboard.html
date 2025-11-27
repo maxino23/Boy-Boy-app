@@ -373,7 +373,7 @@
                                     </div>
                                     {% if errand.runner_user %}
                                     <div style="font-size: 0.9rem; color: #92400e; margin-top: 0.5rem;">
-                                        Runner: {{ errand.runner_user.name }}
+                                        Runner: {{ errand.runner.name }}
                                     </div>
                                     {% endif %}
                                 </div>
@@ -486,7 +486,7 @@
                         <!-- Additional errand info for runners -->
                         <div class="errand-meta" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
                             <div style="font-size: 0.9rem; color: var(--text-light);">
-                                <strong>Posted by:</strong> {{ errand.poster_user.name }}
+                                <strong>Posted by:</strong> {{ errand.poster.name }}
                             </div>
                             {% if errand.accepted_at %}
                             <div style="font-size: 0.9rem; color: var(--text-light);">

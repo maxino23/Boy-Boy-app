@@ -59,7 +59,7 @@
                     </span>
                 </div>
                 <div>
-                    <strong>Runner:</strong> {{ errand.runner_user.name }}
+                    <strong>Runner:</strong> {{ errand.runner.name }}
                 </div>
                 <div>
                     <strong>Status:</strong> 
@@ -73,11 +73,11 @@
             <h4 style="margin-bottom: 1rem;">📞 Runner's Contact Information</h4>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
                 <div>
-                    <strong>Name:</strong> {{ errand.runner_user.name }}
+                    <strong>Name:</strong> {{ errand.runner.name }}
                 </div>
                 {% if errand.runner_user.phone %}
                 <div>
-                    <strong>Phone:</strong> {{ errand.runner_user.phone }}
+                    <strong>Phone:</strong> {{ errand.runner.phone }}
                 </div>
                 {% else %}
                 <div>
